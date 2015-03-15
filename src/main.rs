@@ -1,9 +1,86 @@
+#![feature(old_io)]
+#![feature(core)]
+
+extern crate rand;
+
 use std::default::Default;
+use std::old_io;
+use std::str;
+use rand::{thread_rng, Rng};
+use std::ops;
+use std::fmt;
 
 fn main() {
-    for card in get_cards() {
-        println!("{:?}", card);
+    explore();
+}
+fn show_hand() {
+}
+
+fn explore() {
+    let mut rng = thread_rng();
+    let mut draw_pile: Vec<Card> = get_cards();
+    let mut discard_pile: Vec<Card> = vec![];
+    let mut hand: Vec<Card> = vec![];
+    let mut explore_cards: Vec<Card> = vec![];
+
+    rng.shuffle(&mut draw_pile);
+
+    println!("Your hand:");
+    for card in hand.iter() {
+        println!("\t{:?}", card);
     }
+    println!("");
+
+    explore_cards.push(draw_pile.pop().unwrap());
+    explore_cards.push(draw_pile.pop().unwrap());
+
+    println!("Exploring");
+    for (i, card) in explore_cards.iter().enumerate() {
+        println!("\t{}) {:?}", i + 1, card);
+    }
+    println!("");
+
+    println!("Which do you want to keep?");
+    let keep: usize = get_num(1..explore_cards.len());
+
+    for (i, card) in explore_cards.drain().enumerate() {
+        if i == keep - 1 {
+            hand.push(card)
+        } else {
+            discard_pile.push(card)
+        }
+    }
+
+    println!("Your hand:");
+    for card in hand {
+        println!("\t{:?}", card);
+    }
+
+    println!("The discard has {} cards.", discard_pile.len());
+}
+
+fn get_num<T, U>(valid: U) -> T
+        where T: str::FromStr + fmt::Debug + PartialOrd,
+            U: Contains<T> + fmt::Debug {
+    loop {
+        print!("n = ");
+        let input = old_io::stdin().read_line().ok().expect("Failed to read line");
+
+        let num: T = match input.trim().parse().ok() {
+            Some(num) => num,
+            None => {
+                println!("That's not a number!");
+                continue;
+            }
+        };
+
+        if !valid.contains(&num) {
+            println!("That number is not in the range {:?}!", valid);
+            continue;
+        }
+
+        return num
+    };
 }
 
 #[derive(Debug)]
@@ -13,7 +90,7 @@ enum CardType {
 
 #[derive(Debug)]
 enum Good {
-    Novelty,
+    // Novelty,
     RareElements,
     Genes,
     AlienTechnology,
@@ -158,4 +235,33 @@ fn get_cards() -> Vec<Card> {
             .production(Production::Windfall),
 
     ]
+}
+
+
+trait Contains<T: PartialOrd> {
+    fn contains(&self, needle: &T) -> bool;
+}
+
+impl<T: PartialOrd> Contains<T> for ops::Range<T> {
+    fn contains(&self, needle: &T) -> bool {
+        *needle >= self.start && *needle < self.end
+    }
+}
+
+impl<T: PartialOrd> Contains<T> for ops::RangeFrom<T> {
+    fn contains(&self, needle: &T) -> bool {
+        *needle >= self.start
+    }
+}
+
+impl<T: PartialOrd> Contains<T> for ops::RangeTo<T> {
+    fn contains(&self, needle: &T) -> bool {
+        *needle < self.end
+    }
+}
+
+impl<T: PartialOrd> Contains<T> for ops::RangeFull {
+    fn contains(&self, _: &T) -> bool {
+        true
+    }
 }
