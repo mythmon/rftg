@@ -1,70 +1,130 @@
-#![feature(old_io)]
 #![feature(core)]
+#![feature(collections)]
 
 extern crate rand;
 
 use std::default::Default;
-use std::old_io;
+use std::io;
 use std::str;
 use rand::{thread_rng, Rng};
 use std::ops;
 use std::fmt;
+use std::cell::RefCell;
 
 fn main() {
-    explore();
-}
-fn show_hand() {
-}
+    let cards = get_cards();
+    let game = Game::new(cards);
+    let game_ref = &RefCell::new(game);
+    let mut play_areas = vec![];
+    let num_players = 2;
 
-fn explore() {
-    let mut rng = thread_rng();
-    let mut draw_pile: Vec<Card> = get_cards();
-    let mut discard_pile: Vec<Card> = vec![];
-    let mut hand: Vec<Card> = vec![];
-    let mut explore_cards: Vec<Card> = vec![];
 
-    rng.shuffle(&mut draw_pile);
-
-    println!("Your hand:");
-    for card in hand.iter() {
-        println!("\t{:?}", card);
+    for _ in 0..num_players {
+        let mut pa = PlayArea::new(game_ref);
+        pa.draw_up_to(2);
+        play_areas.push(pa);
     }
-    println!("");
 
-    explore_cards.push(draw_pile.pop().unwrap());
-    explore_cards.push(draw_pile.pop().unwrap());
+    // println!("There are {} cards in the draw pile.", game_ref.borrow().draw_pile.len());
 
-    println!("Exploring");
-    for (i, card) in explore_cards.iter().enumerate() {
-        println!("\t{}) {:?}", i + 1, card);
-    }
-    println!("");
+    println!("Player 1, Explore!");
+    play_areas[0].explore();
+}
 
-    println!("Which do you want to keep?");
-    let keep: usize = get_num(1..explore_cards.len());
+struct Game {
+    draw_pile: Vec<Card>,
+    discard_pile: Vec<Card>,
+}
 
-    for (i, card) in explore_cards.drain().enumerate() {
-        if i == keep - 1 {
-            hand.push(card)
-        } else {
-            discard_pile.push(card)
+impl Game {
+    fn new(draw_pile: Vec<Card>) -> Game {
+        Game {
+            draw_pile: draw_pile,
+            discard_pile: vec![],
         }
     }
 
-    println!("Your hand:");
-    for card in hand {
-        println!("\t{:?}", card);
+    fn draw(&mut self) -> Card {
+        if self.draw_pile.is_empty() {
+            if self.discard_pile.is_empty() {
+                panic!("Out of cards!");
+            }
+            let mut rng = thread_rng();
+            self.draw_pile.append(&mut self.discard_pile);
+            rng.shuffle(&mut self.draw_pile);
+        }
+        self.draw_pile.pop().unwrap()
     }
 
-    println!("The discard has {} cards.", discard_pile.len());
+    fn discard(&mut self, card: Card) {
+        self.discard_pile.push(card);
+    }
+}
+
+struct PlayArea<'a> {
+    game: &'a RefCell<Game>,
+    hand: Vec<Card>,
+}
+
+impl<'a> PlayArea<'a> {
+    fn new(game: &'a RefCell<Game>) -> PlayArea {
+        PlayArea {
+            game: game,
+            hand: vec![],
+        }
+    }
+
+    fn draw_up_to(&mut self, up_to: usize) {
+        while self.hand.len() < up_to {
+            let c = self.game.borrow_mut().draw();
+            self.hand.push(c);
+        }
+    }
+
+    fn explore(&mut self) {
+        let mut explore_cards: Vec<Card> = vec![];
+        let mut game = self.game.borrow_mut();
+
+        println!("Your hand:");
+        for card in self.hand.iter() {
+            println!("\t{:?}", card);
+        }
+        println!("");
+
+        explore_cards.push(game.draw());
+        explore_cards.push(game.draw());
+
+        println!("Exploring");
+        for (i, card) in explore_cards.iter().enumerate() {
+            println!("\t{}) {:?}", i + 1, card);
+        }
+        println!("");
+
+        println!("Which do you want to keep?");
+        let keep: usize = get_num(1..explore_cards.len());
+
+        for (i, card) in explore_cards.drain().enumerate() {
+            if i == keep - 1 {
+                self.hand.push(card);
+            } else {
+                game.discard(card);
+            }
+        }
+
+        println!("Your hand:");
+        for card in self.hand.iter() {
+            println!("\t{:?}", card);
+        }
+    }
 }
 
 fn get_num<T, U>(valid: U) -> T
         where T: str::FromStr + fmt::Debug + PartialOrd,
             U: Contains<T> + fmt::Debug {
+
     loop {
-        print!("n = ");
-        let input = old_io::stdin().read_line().ok().expect("Failed to read line");
+        let mut input = String::new();
+        io::stdin().read_line(&mut input).ok().expect("Error reading stdin.");
 
         let num: T = match input.trim().parse().ok() {
             Some(num) => num,
