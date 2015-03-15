@@ -41,117 +41,121 @@ struct Card {
     production: Option<Production>,
 }
 
+impl Card {
+    fn new(name: &str) -> Card {
+        Card {
+            name: name.to_string(),
+            ..Default::default()
+        }
+    }
+
+    fn trade_cost(mut self, cost: i8) -> Card {
+        self.trade_cost = cost;
+        self
+    }
+
+    fn military_cost(mut self, cost: i8) -> Card {
+        self.military_cost = cost;
+        self
+    }
+
+    fn victory_points(mut self, cost: i8) -> Card {
+        self.victory_points = cost;
+        self
+    }
+
+    fn good(mut self, good: Good) -> Card {
+        self.good = Some(good);
+        self
+    }
+
+    fn production(mut self, production: Production) -> Card {
+        self.production = Some(production);
+        self
+    }
+}
+
 fn get_cards() -> Vec<Card> {
     vec![
-        Card {
-            name: "Alien Robot Sentry".to_string(),
-            military_cost: 2,
-            victory_points: 2,
-            good: Some(Good::AlienTechnology),
-            production: Some(Production::Windfall),
-            ..Default::default()
-        },
-        Card {
-            name: "Aquatic Uplift Race".to_string(),
-            military_cost: 2,
-            victory_points: 2,
-            ..Default::default()
-        },
-        Card {
-            name: "Asteroid Belt".to_string(),
-            trade_cost: 2,
-            victory_points: 1,
-            good: Some(Good::RareElements),
-            production: Some(Production::Windfall),
-            ..Default::default()
-        },
-        Card {
-            name: "Avian Uplift Race".to_string(),
-            military_cost: 2,
-            victory_points: 2,
-            good: Some(Good::Genes),
-            production: Some(Production::Windfall),
-            ..Default::default()
-        },
-        Card {
-            name: "Deserted Alien Colony".to_string(),
-            trade_cost: 5,
-            victory_points: 4,
-            good: Some(Good::AlienTechnology),
-            production: Some(Production::Windfall),
-            ..Default::default()
-        },
-        Card {
-            name: "Deserted Alien Library".to_string(),
-            trade_cost: 6,
-            victory_points: 5,
-            good: Some(Good::AlienTechnology),
-            production: Some(Production::Windfall),
-            ..Default::default()
-        },
-        Card {
-            name: "Deserted Alien Outpost".to_string(),
-            trade_cost: 4,
-            victory_points: 3,
-            good: Some(Good::AlienTechnology),
-            production: Some(Production::Windfall),
-            ..Default::default()
-        },
-        Card {
-            name: "Destroyed World".to_string(),
-            trade_cost: 1,
-            good: Some(Good::RareElements),
-            production: Some(Production::Windfall),
-            ..Default::default()
-        },
-        Card {
-            name: "The Last of the  Uplift Gnarssh".to_string(),
-            military_cost: 1,
-            good: Some(Good::Genes),
-            production: Some(Production::Windfall),
-            ..Default::default()
-        },
-        Card {
-            name: "Pre-Sentient Race".to_string(),
-            trade_cost: 2,
-            victory_points: 1,
-            good: Some(Good::Genes),
-            production: Some(Production::Windfall),
-            ..Default::default()
-        },
-        Card {
-            name: "Radioactive World".to_string(),
-            trade_cost: 2,
-            victory_points: 1,
-            good: Some(Good::RareElements),
-            production: Some(Production::Windfall),
-            ..Default::default()
-        },
-        Card {
-            name: "Rebel Base".to_string(),
-            military_cost: 6,
-            victory_points: 6,
-            ..Default::default()
-        },
-        Card {
-            name: "Rebel Fuel Cache".to_string(),
-            military_cost: 1,
-            victory_points: 1,
-            ..Default::default()
-        },
-        Card {
-            name: "Rebel Homeworld".to_string(),
-            military_cost: 7,
-            victory_points: 7,
-            ..Default::default()
-        },
-        Card {
-            name: "Reptile Uplift Race".to_string(),
-            military_cost: 2,
-            victory_points: 2,
-            good: Some(Good::Genes),
-            production: Some(Production::Windfall),
-            ..Default::default()
-        },
+        Card::new("Alien Robot Sentry")
+            .military_cost(2)
+            .victory_points(2)
+            .good(Good::AlienTechnology)
+            .production(Production::Windfall),
+
+        Card::new("Aquatic Uplift Race")
+            .military_cost(2)
+            .victory_points(2),
+
+        Card::new("Asteroid Belt")
+            .trade_cost(2)
+            .victory_points(1)
+            .good(Good::RareElements)
+            .production(Production::Windfall),
+
+        Card::new("Avian Uplift Race")
+            .military_cost(2)
+            .victory_points(2)
+            .good(Good::Genes)
+            .production(Production::Windfall),
+
+        Card::new("Deserted Alien Colony")
+            .trade_cost(5)
+            .victory_points(4)
+            .good(Good::AlienTechnology)
+            .production(Production::Windfall),
+
+        Card::new("Deserted Alien Library")
+            .trade_cost(6)
+            .victory_points(5)
+            .good(Good::AlienTechnology)
+            .production(Production::Windfall),
+
+        Card::new("Deserted Alien Outpost")
+            .trade_cost(4)
+            .victory_points(3)
+            .good(Good::AlienTechnology)
+            .production(Production::Windfall),
+
+        Card::new("Destroyed World")
+            .trade_cost(1)
+            .good(Good::RareElements)
+            .production(Production::Windfall),
+
+        Card::new("The Last of the  Uplift Gnarssh")
+            .military_cost(1)
+            .good(Good::Genes)
+            .production(Production::Windfall),
+
+        Card::new("Pre-Sentient Race")
+            .trade_cost(2)
+            .victory_points(1)
+            .good(Good::Genes)
+            .production(Production::Windfall),
+
+        Card::new("Radioactive World")
+            .trade_cost(2)
+            .victory_points(1)
+            .good(Good::RareElements)
+            .production(Production::Windfall),
+
+        Card::new("Rebel Base")
+            .military_cost(6)
+            .victory_points(6),
+
+        Card::new("Rebel Fuel Cache")
+            .military_cost(1)
+            .victory_points(1),
+
+        Card::new("Rebel Homeworld")
+            .military_cost(7)
+            .victory_points(7),
+
+        Card::new("Reptile Uplift Race")
+            .military_cost(2)
+            .victory_points(2)
+            .good(Good::Genes)
+            .production(Production::Windfall),
+
     ]
 }
