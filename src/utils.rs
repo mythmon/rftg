@@ -76,6 +76,23 @@ pub fn select<'a, T>(source: &'a Vec<T>) -> &'a T
     &source[choice]
 }
 
+pub fn select_optional<'a, T>(source: &'a Vec<T>) -> Option<&'a T>
+    where T: fmt::Display + Copy
+{
+    for (i, option) in source.iter().enumerate() {
+        println!("{}) {}", i + 1, option);
+    }
+    println!("0) None");
+
+    let choice = get_num(0..(source.len() + 1));
+
+    if choice > 0 {
+        Some(&source[choice - 1])
+    } else {
+        None
+    }
+}
+
 pub trait Variants {
     fn variants() -> Vec<Self>;
 }

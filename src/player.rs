@@ -56,18 +56,22 @@ impl<'a> Player<'a> {
         println!("");
     }
 
-    pub fn explore(&mut self) {
+    pub fn act(&mut self, phase: &game::Phase) {
+        match *phase {
+            game::Phase::Explore => self.explore(),
+            game::Phase::Develop => self.develop(),
+        }
+    }
+
+    fn explore(&mut self) {
         let mut explore_cards: Vec<cards::Card> = vec![];
         let mut game = self.game.borrow_mut();
-
-        self.print_hand();
-        self.print_tableau();
 
         let mut num_to_see: i8 = 2;
         let mut num_to_keep: i8 = 1;
 
         for card in self.tableau.iter() {
-            for power in card.powers_slice() {
+            for power in card.powers.iter() {
                 match *power {
                     cards::Power::ExploreSeeBonus(n) => num_to_see += n,
                     cards::Power::ExploreKeepBonus(n) => num_to_keep += n,
@@ -89,20 +93,17 @@ impl<'a> Player<'a> {
         let mut indexes_to_keep = vec![];
 
         if num_to_keep > 0 {
-            println!("Which do you want to keep? (0 to stop)");
+            println!("Which do you want to keep?");
         }
         while num_to_keep.to_usize().unwrap() > indexes_to_keep.len() {
             let left = num_to_keep.to_usize().unwrap() - indexes_to_keep.len();
             write!(&mut io::stdout(), "({} left) ", left).ok().expect("Could not write to stdout!");
             io::stdout().flush().ok().expect("Could not flush stdout!");
 
-            let mut to_keep = utils::get_num(&indexes_to_discard);
-            if to_keep == 0 {
-                break;
-            }
-            to_keep -= 1;
-            indexes_to_keep.push(to_keep);
+            let choices: Vec<usize> = indexes_to_discard.iter().map(|n| { n + 1 }).collect();
+            let to_keep = utils::get_num(&choices) - 1;
             indexes_to_discard.retain(|n| { *n != to_keep });
+            indexes_to_keep.push(to_keep);
         }
 
         for (i, card) in explore_cards.drain().enumerate() {
@@ -112,6 +113,29 @@ impl<'a> Player<'a> {
                 assert!(indexes_to_keep.contains(&i));
                 self.hand.push(card);
             }
+        }
+    }
+
+    fn develop(&mut self) {
+        println!("Developing");
+
+        let choice: Option<cards::Card> = {
+            let development_choices: Vec<&cards::Card> =
+                self.hand.as_slice().iter()
+                    .filter(|c| { c.card_type == cards::CardType::Development })
+                    .collect();
+            match utils::select_optional(&development_choices) {
+                None => None,
+                Some(card_ref) => Some((*card_ref).clone()),
+            }
+        };
+
+        match choice {
+            None => {},
+            Some(card) => {
+                self.tableau.push(card.clone());
+                self.hand.retain(|c| { *c != card });
+            },
         }
     }
 }

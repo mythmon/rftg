@@ -1,7 +1,7 @@
 use std::default::Default;
 use std::fmt;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Good {
     Novelty,
     RareElements,
@@ -9,12 +9,12 @@ pub enum Good {
     AlienTechnology,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Production {
     Windfall,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum CardType {
     World,
     Development,
@@ -26,22 +26,22 @@ impl Default for CardType {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Power {
     ExploreSeeBonus(i8),
     ExploreKeepBonus(i8),
 }
 
-#[derive(Default, Debug)]
+#[derive(Default, Debug, PartialEq, Clone)]
 pub struct Card {
     name: String,
-    card_type: CardType,
-    trade_cost: i8,
-    military_cost: i8,
-    victory_points: i8,
-    good: Option<Good>,
-    production: Option<Production>,
-    powers: Vec<Power>,
+    pub card_type: CardType,
+    pub trade_cost: i8,
+    pub military_cost: i8,
+    pub victory_points: i8,
+    pub good: Option<Good>,
+    pub production: Option<Production>,
+    pub powers: Vec<Power>,
 }
 
 impl Card {
@@ -91,10 +91,6 @@ impl Card {
     fn add_power(mut self, power: Power) -> Card {
         self.powers.push(power);
         self
-    }
-
-    pub fn powers_slice(&self) -> &[Power] {
-        &self.powers.as_slice()
     }
 }
 

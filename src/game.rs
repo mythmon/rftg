@@ -9,6 +9,7 @@ use utils;
 #[derive(Eq, PartialEq, Hash, Debug, Copy)]
 pub enum Phase {
     Explore,
+    Develop,
 }
 
 impl fmt::Display for Phase {
@@ -19,7 +20,10 @@ impl fmt::Display for Phase {
 
 impl utils::Variants for Phase {
     fn variants() -> Vec<Self> {
-        vec![Phase::Explore]
+        vec![
+            Phase::Explore,
+            Phase::Develop,
+        ]
     }
 }
 
@@ -44,6 +48,7 @@ impl Game {
             if self.discard_pile.is_empty() {
                 panic!("Out of cards!");
             }
+            println!("Shuffle!");
             let mut rng = thread_rng();
             self.draw_pile.append(&mut self.discard_pile);
             rng.shuffle(&mut self.draw_pile);
