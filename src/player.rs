@@ -32,27 +32,42 @@ impl<'a> Player<'a> {
         }
     }
 
+    pub fn print_hand(&self) {
+        if self.hand.len() > 0 {
+            println!("Your hand:");
+            for card in self.hand.iter() {
+                println!("    {}", card);
+            }
+        } else {
+            println!("You hand is empty.");
+        }
+        println!("");
+    }
+
+    pub fn print_tableau(&self) {
+        if self.tableau.len() > 0 {
+            println!("Your tableau:");
+            for card in self.tableau.iter() {
+                println!("    {}", card);
+            }
+        } else {
+            println!("You tableau is empty.");
+        }
+        println!("");
+    }
+
     pub fn explore(&mut self) {
         let mut explore_cards: Vec<cards::Card> = vec![];
         let mut game = self.game.borrow_mut();
 
-        println!("Your tableau:");
-        for card in self.tableau.iter() {
-            println!("    {}", card);
-        }
-        println!("");
-
-        println!("Your hand:");
-        for card in self.hand.iter() {
-            println!("    {}", card);
-        }
-        println!("");
+        self.print_hand();
+        self.print_tableau();
 
         let mut num_to_see: i8 = 2;
         let mut num_to_keep: i8 = 1;
 
         for card in self.tableau.iter() {
-            for power in card.powers.iter() {
+            for power in card.powers_slice() {
                 match *power {
                     cards::Power::ExploreSeeBonus(n) => num_to_see += n,
                     cards::Power::ExploreKeepBonus(n) => num_to_keep += n,
@@ -97,11 +112,6 @@ impl<'a> Player<'a> {
                 assert!(indexes_to_keep.contains(&i));
                 self.hand.push(card);
             }
-        }
-
-        println!("Your hand:");
-        for card in self.hand.iter() {
-            println!("    {}", card);
         }
     }
 }

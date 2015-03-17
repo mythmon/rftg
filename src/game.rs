@@ -1,12 +1,26 @@
 extern crate rand;
 
+use std::fmt;
 use rand::{thread_rng, Rng};
 
 use cards;
+use utils;
 
-#[derive(Eq, PartialEq, Hash, Debug)]
-enum Phase {
+#[derive(Eq, PartialEq, Hash, Debug, Copy)]
+pub enum Phase {
     Explore,
+}
+
+impl fmt::Display for Phase {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        (self as &fmt::Debug).fmt(formatter)
+    }
+}
+
+impl utils::Variants for Phase {
+    fn variants() -> Vec<Self> {
+        vec![Phase::Explore]
+    }
 }
 
 pub struct Game {

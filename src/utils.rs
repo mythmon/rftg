@@ -1,9 +1,6 @@
 extern crate rand;
 
-use std::io;
-use std::str;
-use std::ops;
-use std::fmt;
+use std::{io, str, ops, fmt};
 
 pub trait Contains<T> {
     fn contains(&self, needle: &T) -> bool;
@@ -67,4 +64,18 @@ pub fn get_num<T, U>(valid: U) -> T
 
         return num
     };
+}
+
+pub fn select<'a, T>(source: &'a Vec<T>) -> &'a T
+    where T: fmt::Display + Copy
+{
+    for (i, option) in source.iter().enumerate() {
+        println!("{}) {}", i + 1, option);
+    }
+    let choice = get_num(1..(source.len() + 1)) - 1;
+    &source[choice]
+}
+
+pub trait Variants {
+    fn variants() -> Vec<Self>;
 }

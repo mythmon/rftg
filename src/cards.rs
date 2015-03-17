@@ -41,7 +41,7 @@ pub struct Card {
     victory_points: i8,
     good: Option<Good>,
     production: Option<Production>,
-    pub powers: Vec<Power>,
+    powers: Vec<Power>,
 }
 
 impl Card {
@@ -91,6 +91,10 @@ impl Card {
     fn add_power(mut self, power: Power) -> Card {
         self.powers.push(power);
         self
+    }
+
+    pub fn powers_slice(&self) -> &[Power] {
+        &self.powers.as_slice()
     }
 }
 

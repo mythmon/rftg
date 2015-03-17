@@ -11,6 +11,8 @@ mod utils;
 mod game;
 mod player;
 
+use utils::Variants;
+
 fn main() {
     let cards = cards::get_cards();
     let game = game::Game::new(cards);
@@ -25,6 +27,24 @@ fn main() {
         play_areas.push(pa);
     }
 
-    println!("Player 1, Explore!");
-    play_areas[0].explore();
+    let phases = game::Phase::variants();
+
+    loop {
+        play_areas[0].print_hand();
+        play_areas[0].print_tableau();
+
+        println!("What phase would you like to do?");
+        let phase = utils::select(&phases);
+
+        match phase {
+            &game::Phase::Explore => {
+                play_areas[0].explore();
+            }
+        }
+
+        println!("");
+    }
+    //
+    // println!("Player 1, Explore!");
+    // play_areas[0].explore();
 }
