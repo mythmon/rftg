@@ -36,6 +36,7 @@ fn main() {
         println!("What phase would you like to do?");
         let phase = utils::select(&phases);
 
+        println!("");
         players[0].act(phase);
 
         println!("");

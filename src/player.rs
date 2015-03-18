@@ -56,8 +56,8 @@ impl<'a> Player<'a> {
         println!("");
     }
 
-    pub fn act(&mut self, phase: &game::Phase) {
-        match *phase {
+    pub fn act(&mut self, phase: game::Phase) {
+        match phase {
             game::Phase::Explore => self.explore(),
             game::Phase::Develop => self.develop(),
         }
@@ -75,6 +75,7 @@ impl<'a> Player<'a> {
                 match *power {
                     cards::Power::ExploreSeeBonus(n) => num_to_see += n,
                     cards::Power::ExploreKeepBonus(n) => num_to_keep += n,
+                    _ => (),
                 }
             }
         }
@@ -83,50 +84,53 @@ impl<'a> Player<'a> {
             explore_cards.push(game.draw());
         }
 
-        println!("Exploring");
-        for (i, card) in explore_cards.iter().enumerate() {
-            println!("    {}) {}", i + 1, card);
-        }
-        println!("");
-
-        let mut indexes_to_discard = Vec::from_iter(0..explore_cards.len());
-        let mut indexes_to_keep = vec![];
-
-        if num_to_keep > 0 {
-            println!("Which do you want to keep?");
-        }
-        while num_to_keep.to_usize().unwrap() > indexes_to_keep.len() {
-            let left = num_to_keep.to_usize().unwrap() - indexes_to_keep.len();
-            write!(&mut io::stdout(), "({} left) ", left).ok().expect("Could not write to stdout!");
-            io::stdout().flush().ok().expect("Could not flush stdout!");
-
-            let choices: Vec<usize> = indexes_to_discard.iter().map(|n| { n + 1 }).collect();
-            let to_keep = utils::get_num(&choices) - 1;
-            indexes_to_discard.retain(|n| { *n != to_keep });
-            indexes_to_keep.push(to_keep);
-        }
-
-        for (i, card) in explore_cards.drain().enumerate() {
-            if indexes_to_discard.contains(&i) {
-                game.discard(card);
-            } else {
-                assert!(indexes_to_keep.contains(&i));
-                self.hand.push(card);
-            }
+        println!("Choose cards to keep.");
+        let keep_cards = { utils::select_many(&explore_cards, num_to_keep as usize) };
+        for card in keep_cards {
+            self.hand.push(card);
         }
     }
 
     fn develop(&mut self) {
-        println!("Developing");
+        let mut num_to_draw_after = 0;
+        let mut discount = 0;
 
-        let choice: Option<cards::Card> = {
+        for card in self.tableau.iter() {
+            for power in card.powers.iter() {
+                match *power {
+                    cards::Power::DevelopDiscount(n) => discount += n,
+                    cards::Power::DevelopDraw(n) => num_to_draw_after += n,
+                    _ => (),
+                }
+            }
+        }
+
+        let buying_power = (self.hand.len() as i8) + discount - 1;
+
+        println!("You have an effective buying power of {} ({} cards + {} discount - 1 bought)",
+                buying_power, self.hand.len(), discount);
+        println!("What would you like to develop?");
+        println!("");
+
+        let choice: Option<cards::Card>;
+        loop {
             let development_choices: Vec<&cards::Card> =
                 self.hand.as_slice().iter()
                     .filter(|c| { c.card_type == cards::CardType::Development })
                     .collect();
             match utils::select_optional(&development_choices) {
-                None => None,
-                Some(card_ref) => Some((*card_ref).clone()),
+                None => {
+                    choice = None;
+                    break;
+                },
+                Some(card_ref) => {
+                    if card_ref.trade_cost > buying_power {
+                        println!("You can't afford that card.");
+                    } else {
+                        choice = Some((*card_ref).clone());
+                        break;
+                    }
+                }
             }
         };
 
@@ -135,6 +139,22 @@ impl<'a> Player<'a> {
             Some(card) => {
                 self.tableau.push(card.clone());
                 self.hand.retain(|c| { *c != card });
+
+                let price_to_pay = (card.trade_cost - discount) as usize;
+                if price_to_pay > 0 {
+                    println!("Choose cards to use as payment.");
+                    let payment_cards = { utils::select_many(&self.hand, price_to_pay) };
+
+                    let size_before = self.hand.len();
+                    self.hand.retain(|c| { !payment_cards.contains(&c) });
+                    assert!(size_before - price_to_pay == self.hand.len());
+
+                    for payment in payment_cards {
+                        self.game.borrow_mut().discard(payment.clone());
+                    }
+                } else {
+                    println!("Your cost is 0.");
+                }
             },
         }
     }

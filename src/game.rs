@@ -6,7 +6,7 @@ use rand::{thread_rng, Rng};
 use cards;
 use utils;
 
-#[derive(Eq, PartialEq, Hash, Debug, Copy)]
+#[derive(Eq, PartialEq, Hash, Debug, Clone)]
 pub enum Phase {
     Explore,
     Develop,

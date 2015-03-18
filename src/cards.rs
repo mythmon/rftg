@@ -30,6 +30,9 @@ impl Default for CardType {
 pub enum Power {
     ExploreSeeBonus(i8),
     ExploreKeepBonus(i8),
+
+    DevelopDiscount(i8),
+    DevelopDraw(i8),
 }
 
 #[derive(Default, Debug, PartialEq, Clone)]
@@ -197,6 +200,14 @@ pub fn get_cards() -> Vec<Card> {
             .good(Good::RareElements)
             .production(Production::Windfall),
 
+        Card::new("Galactic Federation")
+            .card_type(CardType::Development)
+            .trade_cost(6)
+            .add_power(Power::DevelopDiscount(2)),
+            // Special scoring
+            //   * +1 VP for cards: type=dev, trade_cost=6
+            //   * +1 VP for cards: type=dev
+
         Card::new("Galactic Renaissance")
             .card_type(CardType::Development)
             .trade_cost(6)
@@ -215,6 +226,20 @@ pub fn get_cards() -> Vec<Card> {
             // Special scoring
             //   * +1VP for cards: has_phase=1
             //   * +1VP for cards: card_type=World
+
+        Card::new("Interstellar Bank")
+            .card_type(CardType::Development)
+            .trade_cost(2)
+            .victory_points(1)
+            .add_power(Power::DevelopDraw(1)),
+            // Doubled
+
+        Card::new("Investment Credits")
+            .card_type(CardType::Development)
+            .trade_cost(1)
+            .victory_points(1)
+            .add_power(Power::DevelopDiscount(1)),
+            // Doubled
 
         Card::new("The Last of the  Uplift Gnarssh")
             .card_type(CardType::World)
