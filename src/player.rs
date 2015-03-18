@@ -1,10 +1,6 @@
 extern crate rand;
 
-use std::io;
-use std::io::Write;
 use std::cell::RefCell;
-use std::iter::FromIterator;
-use std::num::ToPrimitive;
 
 use cards;
 use game;
@@ -89,19 +85,33 @@ impl<'a> Player<'a> {
         for card in keep_cards {
             self.hand.push(card);
         }
+        explore_cards.retain(|c| { !self.hand.contains(c) });
+        for card in explore_cards {
+            game.discard(card);
+        }
     }
 
     fn develop(&mut self) {
-        let mut num_to_draw_after = 0;
+        let mut num_to_draw = 0;
         let mut discount = 0;
 
         for card in self.tableau.iter() {
             for power in card.powers.iter() {
                 match *power {
                     cards::Power::DevelopDiscount(n) => discount += n,
-                    cards::Power::DevelopDraw(n) => num_to_draw_after += n,
+                    cards::Power::DevelopDraw(n) => num_to_draw += n,
                     _ => (),
                 }
+            }
+        }
+
+        if num_to_draw > 0 {
+            println!("Drawing {} cards.", num_to_draw);
+            let mut game_ref = self.game.borrow_mut();
+            for _ in 0..num_to_draw {
+                let card = game_ref.draw();
+                println!("    {}", card);
+                self.hand.push(card);
             }
         }
 
@@ -140,14 +150,14 @@ impl<'a> Player<'a> {
                 self.tableau.push(card.clone());
                 self.hand.retain(|c| { *c != card });
 
-                let price_to_pay = (card.trade_cost - discount) as usize;
+                let price_to_pay: i8 = card.trade_cost - discount;
                 if price_to_pay > 0 {
                     println!("Choose cards to use as payment.");
-                    let payment_cards = { utils::select_many(&self.hand, price_to_pay) };
+                    let payment_cards = { utils::select_many(&self.hand, price_to_pay as usize) };
 
                     let size_before = self.hand.len();
                     self.hand.retain(|c| { !payment_cards.contains(&c) });
-                    assert!(size_before - price_to_pay == self.hand.len());
+                    assert!(size_before - (price_to_pay as usize) == self.hand.len());
 
                     for payment in payment_cards {
                         self.game.borrow_mut().discard(payment.clone());

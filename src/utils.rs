@@ -84,7 +84,7 @@ pub fn select_optional<'a, T>(source: &'a Vec<T>) -> Option<T>
     for (i, option) in source.iter().enumerate() {
         println!("    {}) {}", i + 1, option);
     }
-    println!("0) None");
+    println!("    0) None");
 
     let choice = get_num(0..(source.len() + 1));
 
@@ -115,7 +115,6 @@ pub fn select_many<'a, T>(source: &'a Vec<T>, count: usize) -> Vec<T>
         io::stdout().flush().ok().expect("Could not flush stdout!");
 
         let to_keep = get_num(&available_numbers) - 1;
-        let number_index = available_numbers.position_elem(&to_keep);
         available_numbers.retain(|n| { *n != to_keep });
         chosen.push(to_keep);
     }

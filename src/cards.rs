@@ -3,7 +3,7 @@ use std::fmt;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Good {
-    Novelty,
+    // Novelty,
     RareElements,
     Genes,
     AlienTechnology,
@@ -12,6 +12,7 @@ pub enum Good {
 #[derive(Debug, PartialEq, Clone)]
 pub enum Production {
     Windfall,
+    // Production,
 }
 
 #[derive(Debug, PartialEq, Clone)]
