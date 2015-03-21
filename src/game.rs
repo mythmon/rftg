@@ -10,6 +10,7 @@ use utils;
 pub enum Phase {
     Explore,
     Develop,
+    Settle,
 }
 
 impl fmt::Display for Phase {
@@ -23,6 +24,7 @@ impl utils::Variants for Phase {
         vec![
             Phase::Explore,
             Phase::Develop,
+            Phase::Settle,
         ]
     }
 }

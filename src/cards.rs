@@ -1,12 +1,25 @@
 use std::default::Default;
 use std::fmt;
 
-#[derive(Debug, PartialEq, Clone)]
+use utils;
+
+#[derive(Debug, PartialEq, Clone, Eq, Hash)]
 pub enum Good {
-    // Novelty,
+    Novelty,
     RareElements,
     Genes,
     AlienTechnology,
+}
+
+impl utils::Variants for Good {
+    fn variants() -> Vec<Good> {
+        vec![
+            Good::Novelty,
+            Good::RareElements,
+            Good::Genes,
+            Good::AlienTechnology,
+        ]
+    }
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -34,11 +47,41 @@ pub enum Power {
 
     DevelopDiscount(i8),
     DevelopDraw(i8),
+
+    SettleMilitaryBonus(i8),
+    SettleTradeDiscount(i8),
+    SettleDiscountIfGood(i8, Option<Good>),
+    SettleMilitaryIfGood(i8, Option<Good>),
+    SettleMilitaryIfAttribute(i8, Attribute),
+    SettleMilitaryAsTradeWithDiscount(i8),
+    SettleDiscardForMilitary(i8),
+    SettleDiscardToNegateTradeIfGood(Option<Good>),
+}
+
+#[derive(Debug, PartialEq, Clone, Eq, Hash)]
+pub enum Attribute {
+    Alien,
+    Imperium,
+    Rebel,
+    Starter,
+    Uplift,
+}
+
+impl utils::Variants for Attribute {
+    fn variants() -> Vec<Attribute> {
+        vec![
+            Attribute::Alien,
+            Attribute::Imperium,
+            Attribute::Rebel,
+            Attribute::Starter,
+            Attribute::Uplift,
+        ]
+    }
 }
 
 #[derive(Default, Debug, PartialEq, Clone)]
 pub struct Card {
-    name: String,
+    pub name: String,
     pub card_type: CardType,
     pub trade_cost: i8,
     pub military_cost: i8,
@@ -46,6 +89,7 @@ pub struct Card {
     pub good: Option<Good>,
     pub production: Option<Production>,
     pub powers: Vec<Power>,
+    pub attributes: Vec<Attribute>,
 }
 
 impl Card {
@@ -94,6 +138,11 @@ impl Card {
 
     fn add_power(mut self, power: Power) -> Card {
         self.powers.push(power);
+        self
+    }
+
+    fn add_attribute(mut self, attribute: Attribute) -> Card {
+        self.attributes.push(attribute);
         self
     }
 }
@@ -148,17 +197,46 @@ impl fmt::Display for Card {
 
 pub fn get_cards() -> Vec<Card> {
     vec![
+        Card::new("Alien Tech Institute")
+            .card_type(CardType::Development)
+            .trade_cost(6)
+            .add_power(Power::SettleDiscountIfGood(-2, Some(Good::AlienTechnology)))
+            .add_power(Power::SettleMilitaryIfGood(2, Some(Good::AlienTechnology)))
+            .add_attribute(Attribute::Alien),
+            // Special Scoring
+            //   +1 for cards: good=AlienTechnology, production=Production, type=World
+            //   +2 for cards: trait=Alien
+
+        Card::new("Alien Robot Scout Ship")
+            .card_type(CardType::World)
+            .military_cost(4)
+            .victory_points(2)
+            .good(Good::AlienTechnology)
+            .production(Production::Windfall)
+            .add_power(Power::SettleMilitaryBonus(1))
+            .add_attribute(Attribute::Alien),
+
         Card::new("Alien Robot Sentry")
             .card_type(CardType::World)
             .military_cost(2)
             .victory_points(2)
             .good(Good::AlienTechnology)
-            .production(Production::Windfall),
+            .production(Production::Windfall)
+            .add_attribute(Attribute::Alien),
+
+        Card::new("Alpha Centauri")
+            .card_type(CardType::World)
+            .trade_cost(2)
+            .good(Good::RareElements)
+            .production(Production::Windfall)
+            .add_power(Power::SettleDiscountIfGood(1, Some(Good::RareElements)))
+            .add_power(Power::SettleMilitaryIfGood(1, Some(Good::RareElements))),
 
         Card::new("Aquatic Uplift Race")
             .card_type(CardType::World)
             .military_cost(2)
-            .victory_points(2),
+            .victory_points(2)
+            .add_attribute(Attribute::Uplift),
 
         Card::new("Asteroid Belt")
             .card_type(CardType::World)
@@ -172,34 +250,91 @@ pub fn get_cards() -> Vec<Card> {
             .military_cost(2)
             .victory_points(2)
             .good(Good::Genes)
-            .production(Production::Windfall),
+            .production(Production::Windfall)
+            .add_attribute(Attribute::Uplift),
+
+        Card::new("Blaster Gem Mines")
+            .card_type(CardType::World)
+            .trade_cost(3)
+            .victory_points(2)
+            .good(Good::RareElements)
+            .production(Production::Windfall)
+            .add_power(Power::SettleMilitaryBonus(1)),
+
+        Card::new("Colony Ship")
+            .card_type(CardType::Development)
+            .trade_cost(2)
+            .victory_points(1)
+            .add_power(Power::SettleDiscardToNegateTradeIfGood(None)),
+            // Doubled
+
+        Card::new("Contact Specialist")
+            .card_type(CardType::Development)
+            .trade_cost(1)
+            .victory_points(1)
+            .add_power(Power::SettleMilitaryBonus(-1))
+            .add_power(Power::SettleMilitaryAsTradeWithDiscount(1)),
+            // Doubled
 
         Card::new("Deserted Alien Colony")
             .card_type(CardType::World)
             .trade_cost(5)
             .victory_points(4)
             .good(Good::AlienTechnology)
-            .production(Production::Windfall),
+            .production(Production::Windfall)
+            .add_attribute(Attribute::Alien),
 
         Card::new("Deserted Alien Library")
             .card_type(CardType::World)
             .trade_cost(6)
             .victory_points(5)
             .good(Good::AlienTechnology)
-            .production(Production::Windfall),
+            .production(Production::Windfall)
+            .add_attribute(Attribute::Alien),
 
         Card::new("Deserted Alien Outpost")
             .card_type(CardType::World)
             .trade_cost(4)
             .victory_points(3)
             .good(Good::AlienTechnology)
-            .production(Production::Windfall),
+            .production(Production::Windfall)
+            .add_attribute(Attribute::Alien),
 
         Card::new("Destroyed World")
             .card_type(CardType::World)
             .trade_cost(1)
             .good(Good::RareElements)
             .production(Production::Windfall),
+
+        Card::new("Drop Ships")
+            .card_type(CardType::Development)
+            .trade_cost(4)
+            .victory_points(2)
+            .add_power(Power::SettleMilitaryBonus(3)),
+            // Doubled
+
+        Card::new("Empath World")
+            .card_type(CardType::World)
+            .trade_cost(1)
+            .victory_points(1)
+            .good(Good::Genes)
+            .production(Production::Windfall)
+            .add_power(Power::SettleMilitaryBonus(-1)),
+
+        Card::new("Expedition Force")
+            .card_type(CardType::Development)
+            .trade_cost(1)
+            .victory_points(1)
+            .add_power(Power::ExploreSeeBonus(1))
+            .add_power(Power::SettleMilitaryBonus(1)),
+
+        Card::new("Former Penal Colony")
+            .card_type(CardType::World)
+            .military_cost(2)
+            .victory_points(1)
+            .good(Good::Novelty)
+            .production(Production::Windfall)
+            .add_power(Power::SettleMilitaryBonus(1)),
 
         Card::new("Galactic Federation")
             .card_type(CardType::Development)
@@ -208,6 +343,15 @@ pub fn get_cards() -> Vec<Card> {
             // Special scoring
             //   * +1 VP for cards: type=dev, trade_cost=6
             //   * +1 VP for cards: type=dev
+
+        Card::new("Galactic Imperium")
+            .card_type(CardType::Development)
+            .trade_cost(6)
+            .add_power(Power::SettleMilitaryIfAttribute(4, Attribute::Rebel))
+            .add_attribute(Attribute::Imperium),
+            // Special Scoring
+            //   * +1 VP for cards: trait=Rebel, type=World, military_cost>0
+            //   * +1 VP for cards: type=World, military_cost>0
 
         Card::new("Galactic Renaissance")
             .card_type(CardType::Development)
@@ -246,7 +390,38 @@ pub fn get_cards() -> Vec<Card> {
             .card_type(CardType::World)
             .military_cost(1)
             .good(Good::Genes)
-            .production(Production::Windfall),
+            .production(Production::Windfall)
+            .add_attribute(Attribute::Uplift),
+
+        Card::new("Lost Alien Warship")
+            .card_type(CardType::World)
+            .military_cost(5)
+            .victory_points(3)
+            .good(Good::AlienTechnology)
+            .production(Production::Windfall)
+            .add_power(Power::SettleMilitaryBonus(2))
+            .add_attribute(Attribute::Alien),
+
+        Card::new("New Galactic Order")
+            .card_type(CardType::Development)
+            .trade_cost(6)
+            .add_power(Power::SettleMilitaryBonus(2)),
+            // Special Scoring
+            //   * +Military
+
+        Card::new("New Military Tactics")
+            .card_type(CardType::Development)
+            .trade_cost(1)
+            .victory_points(1)
+            .add_power(Power::SettleDiscardForMilitary(3)),
+            // Doubled
+
+        Card::new("New Sparta")
+            .card_type(CardType::World)
+            .military_cost(2)
+            .victory_points(1)
+            .add_power(Power::SettleMilitaryBonus(2))
+            .add_attribute(Attribute::Starter),
 
         Card::new("Pre-Sentient Race")
             .card_type(CardType::World)
@@ -265,23 +440,61 @@ pub fn get_cards() -> Vec<Card> {
         Card::new("Rebel Base")
             .card_type(CardType::World)
             .military_cost(6)
-            .victory_points(6),
+            .victory_points(6)
+            .add_attribute(Attribute::Rebel),
 
         Card::new("Rebel Fuel Cache")
             .card_type(CardType::World)
             .military_cost(1)
-            .victory_points(1),
+            .victory_points(1)
+            .add_attribute(Attribute::Rebel),
 
         Card::new("Rebel Homeworld")
             .card_type(CardType::World)
             .military_cost(7)
-            .victory_points(7),
+            .victory_points(7)
+            .add_attribute(Attribute::Rebel),
+
+        Card::new("Rebel Outpost")
+            .card_type(CardType::World)
+            .military_cost(5)
+            .victory_points(5)
+            .add_power(Power::SettleMilitaryBonus(1))
+            .add_attribute(Attribute::Rebel),
+
+        Card::new("Rebel Warrior Race")
+            .card_type(CardType::World)
+            .military_cost(3)
+            .victory_points(2)
+            .add_power(Power::SettleMilitaryBonus(1))
+            .add_attribute(Attribute::Rebel),
+
+        Card::new("Refugee World")
+            .card_type(CardType::World)
+            .victory_points(1)
+            .good(Good::Novelty)
+            .production(Production::Windfall)
+            .add_power(Power::SettleMilitaryBonus(-1)),
+
+        Card::new("Replicant Robots")
+            .card_type(CardType::Development)
+            .trade_cost(4)
+            .victory_points(2)
+            .add_power(Power::SettleTradeDiscount(2)),
 
         Card::new("Reptile Uplift Race")
             .card_type(CardType::World)
             .military_cost(2)
             .victory_points(2)
             .good(Good::Genes)
-            .production(Production::Windfall),
+            .production(Production::Windfall)
+            .add_attribute(Attribute::Uplift),
+
+        Card::new("Space Marines")
+            .card_type(CardType::Development)
+            .trade_cost(2)
+            .victory_points(1)
+            .add_power(Power::SettleMilitaryBonus(2)),
+            // Doubled
     ]
 }
