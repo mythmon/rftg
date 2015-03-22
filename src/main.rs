@@ -1,6 +1,7 @@
 #![feature(core)]
 #![feature(collections)]
 #![feature(io)]
+#![feature(box_syntax)]
 
 extern crate rand;
 
