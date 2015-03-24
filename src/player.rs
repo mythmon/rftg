@@ -15,9 +15,9 @@ struct Capabilities {
     develop_trade_discount: i32,
     develop_draw_before: i32,
 
-    settle_trade_power: i32,
+    settle_trade_power: cards::Cost,
     settle_trade_discount: i32,
-    settle_military_power: i32,
+    settle_military_power: cards::Cost,
     settle_good_discounts: HashMap<Option<cards::Good>, i32>,
     settle_good_military: HashMap<Option<cards::Good>, i32>,
     settle_attr_military: HashMap<cards::Attribute, i32>,
@@ -52,9 +52,9 @@ impl Capabilities {
             develop_trade_discount: 0,
             develop_draw_before: 0,
 
-            settle_trade_power: hand_size - 1,
+            settle_trade_power: cards::Cost::Trade(hand_size - 1),
             settle_trade_discount: 0,
-            settle_military_power: 0,
+            settle_military_power: cards::Cost::Military(0),
             settle_good_discounts: good_discounts,
             settle_good_military: good_military,
             settle_attr_military: attr_military,
@@ -118,20 +118,28 @@ impl<'a> Player<'a> {
         for card in self.tableau.iter() {
             for power in card.powers.iter() {
                 match *power {
-                    cards::Power::ExploreSeeBonus(n) => { caps.explore_to_see += n; },
-                    cards::Power::ExploreKeepBonus(n) => { caps.explore_to_keep += n; },
+                    cards::Power::ExploreSeeBonus(n) => {
+                        caps.explore_to_see += n;
+                    },
+                    cards::Power::ExploreKeepBonus(n) => {
+                        caps.explore_to_keep += n;
+                    },
 
                     cards::Power::DevelopDiscount(n) => {
                         caps.develop_trade_power += n;
                         caps.develop_trade_discount += n;
                     },
-                    cards::Power::DevelopDraw(n) => { caps.develop_draw_before += n; },
+                    cards::Power::DevelopDraw(n) => {
+                        caps.develop_draw_before += n;
+                    },
 
                     cards::Power::SettleTradeDiscount(n) => {
-                        caps.settle_trade_power += n;
-                        caps.settle_trade_discount += n;
+                        caps.settle_trade_power = caps.settle_trade_power + n;
+                        caps.settle_trade_discount = caps.settle_trade_discount + n;
                     },
-                    cards::Power::SettleMilitaryBonus(n) => { caps.settle_military_power += n; },
+                    cards::Power::SettleMilitaryBonus(n) => {
+                        caps.settle_military_power = caps.settle_military_power + n;
+                    },
                     cards::Power::SettleDiscountIfGood(n, ref good) => {
                         caps.settle_good_discounts[good.clone()] += n;
                     },
@@ -176,7 +184,6 @@ impl<'a> Player<'a> {
         let mut explore_cards: Vec<cards::Card> = vec![];
         let mut game = self.game.borrow_mut();
         let caps = self.get_capabilities();
-
 
         for _ in 0..(caps.explore_to_see) {
             explore_cards.push(game.draw());
@@ -238,12 +245,7 @@ impl<'a> Player<'a> {
             Some(card) => {
                 self.tableau.push(card.clone());
                 self.hand.retain(|c| { *c != card });
-
-                match card.cost {
-                    cards::Cost::Trade(n) => self.pay_trade_cost(n - caps.settle_trade_discount),
-                    cards::Cost::Free => {},
-                    cards::Cost::Military(_) => panic!("Military cost where not expected."),
-                }
+                self.pay_trade_cost((card.cost - caps.settle_trade_discount).trade());
             },
         }
     }
@@ -251,8 +253,8 @@ impl<'a> Player<'a> {
     fn settle(&mut self) {
         let caps = self.get_capabilities();
 
-        println!("You have a military power of {}", caps.settle_military_power);
-        println!("You have an effective buying power of {}", caps.settle_trade_power);
+        println!("You have a military power of {}", caps.settle_military_power.military());
+        println!("You have an effective buying power of {}", caps.settle_trade_power.trade());
 
         if caps.settle_good_discounts.values().any(|n| { *n > 0 }) ||
            caps.settle_good_military.values().any(|n| { *n > 0 }) ||
@@ -298,7 +300,40 @@ impl<'a> Player<'a> {
                     break;
                 },
                 Some(card_ref) => {
-                    if card_ref.cost > caps.settle_trade_power || card_ref.cost > caps.settle_military_power {
+                    let mut real_cost = card_ref.cost.clone();
+
+                    match (card_ref.cost.clone(), card_ref.produces.clone()) {
+                        (cards::Cost::Military(_), Some((_, good))) => {
+                            real_cost = real_cost - caps.settle_good_military[Some(good)];
+                        },
+                        (cards::Cost::Military(_), None) => {
+                            let none: Option<cards::Good> = None;
+                            real_cost = real_cost - caps.settle_good_military[none];
+                        },
+                        (cards::Cost::Trade(_), Some((_, good))) => {
+                            real_cost = real_cost - caps.settle_good_discounts[Some(good)];
+                        },
+                        (cards::Cost::Trade(_), None) => {
+                            let none: Option<cards::Good> = None;
+                            real_cost = real_cost - caps.settle_good_discounts[none];
+                        },
+                        (cards::Cost::Free, _) => {},
+                    }
+
+                    match card_ref.cost {
+                        cards::Cost::Military(_) => {
+                            for ref attr in card_ref.attributes.iter() {
+                                real_cost = real_cost - caps.settle_attr_military[**attr];
+                            }
+                        },
+                        _ => {},
+                    }
+
+                    println!("Card's real cost: {:?}", real_cost);
+                    println!("real_cost > trade: {}", real_cost > caps.settle_trade_power);
+                    println!("real_cost > military: {}", real_cost > caps.settle_military_power);
+
+                    if real_cost > caps.settle_trade_power || real_cost > caps.settle_military_power {
                         println!("You can't afford that card.");
                     } else {
                         choice = Some((*card_ref).clone());

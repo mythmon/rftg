@@ -4,6 +4,10 @@ use std::{io, str, ops, fmt};
 use std::iter::FromIterator;
 use std::io::Write;
 
+pub trait Variants {
+    fn variants() -> Vec<Self>;
+}
+
 pub trait Contains<T> {
     fn contains(&self, needle: &T) -> bool;
 }
@@ -124,8 +128,4 @@ pub fn select_many<'a, T>(source: &'a Vec<T>, count: usize) -> Vec<T>
         .filter(|&(index, _)| { chosen.contains(&index) })
         .map(|(_, item)| { item.clone() })
         .collect()
-}
-
-pub trait Variants {
-    fn variants() -> Vec<Self>;
 }
